@@ -33,23 +33,27 @@ List anything else that you can get done to improve the app functionality!
 - [✅] Handle load more movie
 
 ## Video Walkthrough
-- Show list movie 
-- Show detail movie 
-- Responsive 
-- Load more movie
-- Search movie
 Here's a walkthrough of implemented user stories:
 
-![plot](./src/demo/show%20list%20movie%201.gif)
+
+- Show list movie 
 ![plot](./src/demo/show%20list%20movie%202.gif)
-
-
-
-> Please record screen to a GIF file and attach link here
+- Show detail movie 
+![plot](./src/demo/show%20list%20movie%207.gif)
+- Pull to refresh
+![plot](./src/demo/show%20list%20movie%204.gif)
+- Responsive 
+![plot](./src/demo/show%20list%20movie%206.gif)
+- Load more movie
+![plot](./src/demo/show%20list%20movie%201.gif)
+- Search movie
+![plot](./src/demo/show%20list%20movie%205.gif)
+- Warning internet 
+![plot](./src/demo/show%20list%20movie%203.gif)
 
 ## License
 
-    Copyright [2016] NGUYEN VIET KHOA
+    Copyright [2022] NGUYEN VIET KHOA
 
     Licensed under the Apache License, Version 2.0 (the "License");
     you may not use this file except in compliance with the License.
