@@ -33,12 +33,15 @@ List anything else that you can get done to improve the app functionality!
 - [✅] Handle load more movie
 
 ## Video Walkthrough
-- Show list movie : 
-- Show detail movie : 
-- Responsive : 
+- Show list movie 
+- Show detail movie 
+- Responsive 
 - Load more movie
 - Search movie
 Here's a walkthrough of implemented user stories:
+
+![plot](./src/demo/show%20list%20movie%201.gif)
+![plot](./src/demo/show%20list%20movie%202.gif)
 
 
 
