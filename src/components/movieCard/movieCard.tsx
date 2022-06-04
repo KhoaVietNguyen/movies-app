@@ -88,11 +88,11 @@ const useStyles = makeStyles(() => ({
 	dialogContainer: {
 		borderRadius: 0,
 		color: 'white',
-		backgroundPosition: ' right -200px top',
-		backgroundSize: 'cover',
-		backgroundRepeat: ' no-repeat',
-		backgroundImage: (props: ItemList) =>
-			`url(${URL_IMAGE}${props.backdropPath})`,
+		// backgroundPosition: ' right -200px top',
+		// backgroundSize: 'cover',
+		// backgroundRepeat: ' no-repeat',
+		// backgroundImage: (props: ItemList) =>
+		// 	`url(${URL_IMAGE}${props.backdropPath})`,
 	},
 	dialogContent: {
 		borderRadius: 0,
