@@ -29,7 +29,7 @@ export const getMoreMovieLists = createAsyncThunk<
 	{ dataList: DataList },
 	number
 >('home/getMoreMovieLists', async (page: number) => {
-	 await delay(2000);
+	//  await delay(1000);
 	const dataList = await services.api.getMovieLists({
 		apiKey: API_KEY,
 		page: page,
@@ -42,7 +42,7 @@ export const getMoreMovieLists = createAsyncThunk<
 export const searchMovie = createAsyncThunk<{ dataList: DataList }, string>(
 	'home/search',
 	async (param?: string) => {
-		await delay(2000);
+		// await delay(1000);
 		const dataList = await services.api.searchMovie({
 			apiKey: API_KEY,
 			key: param,

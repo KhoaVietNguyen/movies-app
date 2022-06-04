@@ -105,6 +105,8 @@ const CommonButton: React.FC<ButtonProps> = ({
 		isBorder,
 		borderColor,
 	});
+
+	
 	return (
 		<button
 			className={classes.root}

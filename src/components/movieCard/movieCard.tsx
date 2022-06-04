@@ -1,4 +1,9 @@
-import { Backdrop, Dialog, makeStyles } from '@material-ui/core';
+import {
+	Backdrop,
+	CircularProgress,
+	Dialog,
+	makeStyles,
+} from '@material-ui/core';
 import { URL_IMAGE, URL_IMAGE_CARD } from 'constant';
 import React from 'react';
 import { ItemList } from 'models/homeModels';
@@ -9,7 +14,11 @@ import BookmarkIcon from '@material-ui/icons/Bookmark';
 import StartIcon from '@material-ui/icons/Star';
 import MoreIcon from '@material-ui/icons/More';
 import PlayIcon from '@material-ui/icons/PlayCircleFilled';
+import ErrorIcon from '@material-ui/icons/ErrorOutline';
 import SkeletonCard from './skeletonCard';
+import Skeleton from '@material-ui/lab/Skeleton';
+import { delay } from 'utils/delay';
+import ImageCustom from './imageCustom';
 
 type Props = {
 	data: ItemList;
@@ -18,13 +27,18 @@ type Props = {
 const useStyles = makeStyles(() => ({
 	imageContainer: {
 		borderRadius: 8,
-		overflow: 'hidden',
+		position: 'relative',
+		backgroundSize: 'cover',
+		backgroundRepeat: ' no-repeat',
+		backgroundImage: (props: ItemList) =>
+			`url(${URL_IMAGE}${props.posterPath}) ,linear-gradient(to bottom, grey 30%, white 100%)`,
+		width: 200,
+		height: 300,
 	},
 	cardContainer: {
 		display: 'flex',
 		flexDirection: 'column',
 		height: '100%',
-		position: 'relative',
 		background: 'var(--color-foreground)',
 		boxShadow: '0px 4px 4px rgba(0, 0, 0, 0.25)',
 		borderRadius: 8,
@@ -108,6 +122,8 @@ const MovieCard: React.FC<Props> = ({ data }) => {
 	const classes = useStyles(data);
 	const [didLoad, setLoad] = React.useState(false);
 	const [open, setOpen] = React.useState(false);
+	const [isError, setError] = React.useState(false);
+	const [url, setUrl] = React.useState(URL_IMAGE_CARD + data.posterPath);
 
 	const handleClickOpen = () => {
 		setOpen(true);
@@ -115,32 +131,18 @@ const MovieCard: React.FC<Props> = ({ data }) => {
 	const handleClose = () => {
 		setOpen(false);
 	};
+
 	return (
 		<>
 			<div className={classes.cardContainer} onClick={handleClickOpen}>
-				{!didLoad && (
-					<div className={classes.loadingContainer}>
-						<SkeletonCard />
-					</div>
-				)}
+				<ImageCustom url={URL_IMAGE_CARD + data.posterPath} />
 
-				<img
-					loading='lazy'
-					className={classes.imageContainer}
-					src={URL_IMAGE_CARD + data.posterPath}
-					alt=''
-					height={300}
-					// width={200}
-					onLoad={() => setLoad(true)}
-				/>
-				{didLoad && (
-					<div className={classes.infoContainer}>
-						<div>{data.title}</div>
-						<div className={classes.date}>
-							{formatDatetime(data.releaseDate, 'LL')}
-						</div>
+				<div className={classes.infoContainer}>
+					<div>{data.title}</div>
+					<div className={classes.date}>
+						{formatDatetime(data.releaseDate, 'LL')}
 					</div>
-				)}
+				</div>
 			</div>
 			<Dialog
 				closeAfterTransition
@@ -157,14 +159,10 @@ const MovieCard: React.FC<Props> = ({ data }) => {
 				<div className={classes.dialogContainer}>
 					<div className={classes.dialogContent}>
 						<div className={classes.imageDialog}>
-							<img
-								loading='lazy'
-								className={classes.imageContainer}
-								src={URL_IMAGE + data.posterPath}
-								alt=''
+							<ImageCustom
+								url={URL_IMAGE_CARD + data.posterPath}
 								height={450}
-								width={300}
-								onLoad={() => setLoad(true)}
+								width={260}
 							/>
 						</div>
 						<div className={classes.content}>

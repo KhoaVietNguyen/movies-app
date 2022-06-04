@@ -19,7 +19,7 @@ import { Detector } from 'react-detect-offline';
 
 const useStyles = makeStyles(() => ({
 	container: {
-		height: '100vh',
+		// height: '100vh',
 		display: 'flex',
 		flexDirection: 'column',
 		width: '100vw',
@@ -42,7 +42,7 @@ const useStyles = makeStyles(() => ({
 		alignItems: 'center',
 		display: 'grid',
 		gridGap: 20,
-		overflowX: 'auto',
+		overflow: 'auto',
 		scrollSnapType: 'x mandatory',
 		scrollSnapStop: 'always',
 		scrollPadding: '20px',
@@ -54,8 +54,12 @@ const useStyles = makeStyles(() => ({
 	},
 
 	body: {
-		padding: '20px 0px 20px',
-		width: '100vw',
+		padding: '20px 200px 20px',
+		width: '100%',
+		// justifyContent: 'center',
+		// alignItems: 'center',
+		display: 'grid',
+		overflow: 'auto',
 	},
 	loadMore: {
 		display: 'flex',
@@ -64,7 +68,9 @@ const useStyles = makeStyles(() => ({
 		padding: 20,
 	},
 	headerContainer: {
+		// display: 'grid',
 		display: 'flex',
+		// gridTemplateColumns: 'repeat(auto-fill)',
 		justifyContent: 'space_between',
 		alignItems: 'center',
 		background: '#032541',
@@ -123,6 +129,7 @@ const HomePage: React.FC = () => {
 					!online && <div className={classes.warning}>You are currently offline</div>
 				}
 			/>
+			{/* <CommonLoadingSpinner isLoading={homeState.isFetching} /> */}
 
 			<div className={classes.headerContainer}>
 				<div className={classes.tabContainer}>
@@ -152,43 +159,43 @@ const HomePage: React.FC = () => {
 					/>
 				</div>
 			</div>
-			<CommonLoadingSpinner isLoading={homeState.isFetching} />
+
 			{!homeState.isFetching && _.isEmpty(dataList) && (
 				<div>
 					<h2>Not Found</h2>
 				</div>
 			)}
-			<PullToRefresh
+			{/* <PullToRefresh
 				onRefresh={() => dispatch(getMovieLists(1))}
 				// canFetchMore={true}
 			>
-				<div className={classes.body} id='list'>
-					<section
-						className={classes.listContainer}
-						style={{
-							gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-							// gridAutoFlow: 'column',
-						}}
-					>
-						{dataList?.map((elm, index) => (
-							<MovieCard key={elm.id} data={elm} />
-						))}
-					</section>
+			</PullToRefresh> */}
+			<div className={classes.body} id='list'>
+				<section
+					className={classes.listContainer}
+					style={{
+						gridTemplateColumns: 'repeat(auto-fill, 200px)',
+						// gridAutoFlow: 'column',
+					}}
+				>
+					{dataList?.map((elm, index) => (
+						<MovieCard key={elm.id} data={elm} />
+					))}
+				</section>
 
-					<div className={classes.loadMore}>
-						{!_.isEmpty(dataList) && (
-							<CommonButton
-								title='Load more'
-								icon={<MoreIcon />}
-								onClick={throttledLoadMore}
-								height={60}
-								width={250}
-								backgroundColor='white'
-							/>
-						)}
-					</div>
+				<div className={classes.loadMore}>
+					{!_.isEmpty(dataList) && (
+						<CommonButton
+							title='Load more'
+							icon={<MoreIcon />}
+							onClick={throttledLoadMore}
+							height={60}
+							width={250}
+							backgroundColor='white'
+						/>
+					)}
 				</div>
-			</PullToRefresh>
+			</div>
 		</div>
 	);
 };

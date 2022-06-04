@@ -48,6 +48,7 @@ const CommonSearchBar: React.FC<Props> = ({
 					placeholder={placeholder}
 					error={false}
 					row={1}
+					onEnter = {() => onSearch(value)}
 				/>
 				<div style={{ padding: 5 }} />
 				<CommonButton

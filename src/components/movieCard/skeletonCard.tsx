@@ -4,8 +4,8 @@ import Skeleton from '@material-ui/lab/Skeleton';
 
 const useStyles = makeStyles(() => ({
 	cardContainer: {
-		// boxShadow: '0px 4px 4px rgba(0, 0, 0, 0.25)',
-		// borderRadius: 8,
+		boxShadow: '0px 4px 4px rgba(0, 0, 0, 0.25)',
+		borderRadius: 8,
 	},
 
 	infoContainer: {
@@ -20,7 +20,7 @@ const SkeletonCard: React.FC = () => {
 
 	return (
 		<div className={classes.cardContainer}>
-			<Skeleton height={300} animation='wave' />
+			<Skeleton height={200} animation='wave' />
 
 			<div className={classes.infoContainer}>
 				<Skeleton width={210} height={30} animation='wave' />

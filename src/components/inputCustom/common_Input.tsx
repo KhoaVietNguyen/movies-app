@@ -23,6 +23,7 @@ type InputProps = {
 	maxLength?: number;
 	error?: boolean;
 	type?: 'number' | 'text';
+	onEnter: () => void;
 };
 
 const useStyles = makeStyles(() => ({
@@ -60,6 +61,7 @@ const CommonInput: React.FC<InputProps> = ({
 	initialValue,
 	maxLength,
 	type = 'text',
+	onEnter,
 }) => {
 	const [value, setValue] = React.useState(initialValue);
 	const [isError, setError] = React.useState(false);
@@ -90,6 +92,12 @@ const CommonInput: React.FC<InputProps> = ({
 		}
 		return '';
 	};
+
+	const handleKeyDown = (event: { key: string }) => {
+		if (event.key === 'Enter') {
+			onEnter();
+		}
+	};
 	return (
 		<>
 			<FormControl
@@ -99,6 +107,7 @@ const CommonInput: React.FC<InputProps> = ({
 			>
 				{title && <label className={classes.title}>{title}</label>}
 				<InputBase
+					onKeyDown={handleKeyDown}
 					inputProps={{ maxLength: maxLength, type: type }}
 					name={name}
 					startAdornment={
