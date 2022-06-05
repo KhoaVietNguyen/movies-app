@@ -1,5 +1,5 @@
 import React from 'react';
-import { makeStyles } from '@material-ui/core';
+import { CircularProgress, makeStyles } from '@material-ui/core';
 import {
 	getMoreMovieLists,
 	getMovieLists,
@@ -182,17 +182,20 @@ const HomePage: React.FC = () => {
 						<MovieCard key={elm.id} data={elm} />
 					))}
 				</section>
-
 				<div className={classes.loadMore}>
-					{!_.isEmpty(dataList) && (
-						<CommonButton
-							title='Load more'
-							icon={<MoreIcon />}
-							onClick={throttledLoadMore}
-							height={60}
-							width={250}
-							backgroundColor='white'
-						/>
+					{!homeState.isFetching ? (
+						!_.isEmpty(dataList) && (
+							<CommonButton
+								title='Load more'
+								icon={<MoreIcon />}
+								onClick={throttledLoadMore}
+								height={60}
+								width={250}
+								backgroundColor='white'
+							/>
+						)
+					) : (
+						<CircularProgress size={50} />
 					)}
 				</div>
 			</div>
