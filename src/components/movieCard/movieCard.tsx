@@ -88,19 +88,19 @@ const useStyles = makeStyles(() => ({
 	dialogContainer: {
 		borderRadius: 0,
 		color: 'white',
-		// backgroundPosition: ' right -200px top',
-		// backgroundSize: 'cover',
-		// backgroundRepeat: ' no-repeat',
-		// backgroundImage: (props: ItemList) =>
-		// 	`url(${URL_IMAGE}${props.backdropPath})`,
+		backgroundPosition: ' right -200px top',
+		backgroundSize: 'cover',
+		backgroundRepeat: ' no-repeat',
+		backgroundImage: (props: ItemList) =>
+			`url(${URL_IMAGE}${props.backdropPath})`,
 	},
 	dialogContent: {
 		borderRadius: 0,
 		display: 'flex',
 		flexDirection: 'row',
 		height: '100%',
-		backgroundColor: "rgba(0, 0, 0, 0.8)"
-			// 'linear-gradient(to right, rgba(31.5, 10.5, 10.5, 1) 250px, rgba(31.5, 10.5, 10.5, 0.84) 100%)',
+		backgroundImage:
+			'linear-gradient(to right, rgba(31.5, 10.5, 10.5, 1) 250px, rgba(31.5, 10.5, 10.5, 0.84) 100%)',
 	},
 	content: {
 		padding: 20,
