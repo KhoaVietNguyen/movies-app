@@ -99,8 +99,8 @@ const useStyles = makeStyles(() => ({
 		display: 'flex',
 		flexDirection: 'row',
 		height: '100%',
-		backgroundImage:
-			'linear-gradient(to right, rgba(31.5, 10.5, 10.5, 1) 250px, rgba(31.5, 10.5, 10.5, 0.84) 100%)',
+		backgroundColor: "rgba(0, 0, 0, 0.8)"
+			// 'linear-gradient(to right, rgba(31.5, 10.5, 10.5, 1) 250px, rgba(31.5, 10.5, 10.5, 0.84) 100%)',
 	},
 	content: {
 		padding: 20,
