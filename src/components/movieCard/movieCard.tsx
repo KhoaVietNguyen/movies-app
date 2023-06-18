@@ -88,7 +88,7 @@ const useStyles = makeStyles(() => ({
 	dialogContainer: {
 		borderRadius: 0,
 		color: 'white',
-		backgroundPosition: ' right -200px top',
+		backgroundPosition: 'center -150px',
 		backgroundSize: 'cover',
 		backgroundRepeat: ' no-repeat',
 		backgroundImage: (props: ItemList) =>
@@ -100,7 +100,7 @@ const useStyles = makeStyles(() => ({
 		flexDirection: 'row',
 		height: '100%',
 		backgroundImage:
-			'linear-gradient(to right, rgba(31.5, 10.5, 10.5, 1) 250px, rgba(31.5, 10.5, 10.5, 0.84) 100%)',
+			'linear-gradient(to right, rgba(10, 5, 10, 0.7) 100px, rgba(10, 10, 10.5, 0.8) 100%)',
 	},
 	content: {
 		padding: 20,
@@ -155,14 +155,17 @@ const MovieCard: React.FC<Props> = ({ data }) => {
 				onClose={handleClose}
 				open={open}
 				className={classes.dialog}
+				PaperProps={{
+					style: { borderRadius: 0 }
+				  }}
 			>
 				<div className={classes.dialogContainer}>
 					<div className={classes.dialogContent}>
 						<div className={classes.imageDialog}>
 							<ImageCustom
 								url={URL_IMAGE_CARD + data.posterPath}
-								height={450}
-								width={260}
+								//height={450}
+								//width={260}
 							/>
 						</div>
 						<div className={classes.content}>
