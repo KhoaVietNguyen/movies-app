@@ -21,6 +21,19 @@ export default function AnimePage() {
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null)
   const { isInList, toggle } = useWatchlist()
 
+  const { data: anime, isLoading } = useQuery({
+    queryKey: ['anime', animeId],
+    queryFn: () => getAnimeById(animeId),
+    staleTime: 5 * 60 * 1000,
+  })
+
+  const { data: details } = useQuery({
+    queryKey: ['anime-details', animeId],
+    queryFn: () => getAnimeDetails(animeId),
+    staleTime: 5 * 60 * 1000,
+    enabled: !!anime,
+  })
+
   const images = details?.images ?? []
   const closeLightbox = useCallback(() => setLightboxIndex(null), [])
   const prevImage = useCallback(() => setLightboxIndex((i) => (i !== null && i > 0 ? i - 1 : i)), [])
@@ -36,19 +49,6 @@ export default function AnimePage() {
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [lightboxIndex, prevImage, nextImage, closeLightbox])
-
-  const { data: anime, isLoading } = useQuery({
-    queryKey: ['anime', animeId],
-    queryFn: () => getAnimeById(animeId),
-    staleTime: 5 * 60 * 1000,
-  })
-
-  const { data: details } = useQuery({
-    queryKey: ['anime-details', animeId],
-    queryFn: () => getAnimeDetails(animeId),
-    staleTime: 5 * 60 * 1000,
-    enabled: !!anime,
-  })
 
   const saved = anime ? isInList(anime.id) : false
   const trailer = details?.videos?.[0] ?? null

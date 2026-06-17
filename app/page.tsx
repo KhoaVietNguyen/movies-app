@@ -1,6 +1,6 @@
 'use client'
 import { useInfiniteQuery } from '@tanstack/react-query'
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { getMovies, discoverMovies } from '@/lib/tmdb'
 import { getAnime } from '@/lib/jikan'
@@ -17,7 +17,7 @@ function validMode(m: string | null): AppMode {
   return 'movie'
 }
 
-export default function HomePage() {
+function HomeContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const [mode, setMode] = useState<AppMode>(() => validMode(searchParams.get('mode')))
@@ -174,5 +174,13 @@ export default function HomePage() {
 
       {searchOpen && <SearchOverlay onClose={() => setSearchOpen(false)} mode={isAnime ? 'anime' : 'movie'} />}
     </main>
+  )
+}
+
+export default function HomePage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#0d0d10]" />}>
+      <HomeContent />
+    </Suspense>
   )
 }
