@@ -5,7 +5,8 @@ import type { WCMatch } from '@/lib/wc-types'
 
 interface HighlightData {
   videoId: string
-  source: 'dailymotion' | 'youtube'
+  source: 'dailymotion' | 'youtube' | 'scorebat'
+  embedUrl?: string
   title?: string
   thumbnail?: string
 }
@@ -36,16 +37,19 @@ export default function HighlightPlayer({ match }: Props) {
     enabled: false,
   })
 
+  const hasVideo = Boolean(data?.videoId || data?.embedUrl)
+
   const handleClick = () => {
     if (!isFetched) {
       refetch().then(() => setOpen(true))
-    } else if (data?.videoId) {
+    } else if (hasVideo) {
       setOpen(true)
     }
   }
 
   if (match.status !== 'FINISHED') return null
 
+  const isScorebat = data?.source === 'scorebat'
   const isDailymotion = data?.source === 'dailymotion'
   const ytUrl = data?.videoId ? `https://www.youtube.com/watch?v=${data.videoId}` : ''
   const ytThumb = data?.videoId ? `https://img.youtube.com/vi/${data.videoId}/maxresdefault.jpg` : ''
@@ -67,11 +71,11 @@ export default function HighlightPlayer({ match }: Props) {
         )}
       </button>
 
-      {isFetched && !data?.videoId && !isLoading && (
+      {isFetched && !hasVideo && !isLoading && (
         <span className="text-[11px] text-zinc-700">Không tìm thấy highlight</span>
       )}
 
-      {open && data?.videoId && (
+      {open && hasVideo && (
         <div
           className="fixed inset-0 z-100 flex items-center justify-center bg-black/96"
           onClick={() => setOpen(false)}
@@ -84,11 +88,13 @@ export default function HighlightPlayer({ match }: Props) {
                   {match.homeTeam.name} vs {match.awayTeam.name} — Highlight
                 </p>
                 <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${
-                  isDailymotion
-                    ? 'bg-blue-500/20 text-blue-400'
-                    : 'bg-red-500/20 text-red-400'
+                  isScorebat
+                    ? 'bg-orange-500/20 text-orange-400'
+                    : isDailymotion
+                      ? 'bg-blue-500/20 text-blue-400'
+                      : 'bg-red-500/20 text-red-400'
                 }`}>
-                  {isDailymotion ? 'Dailymotion' : 'YouTube'}
+                  {isScorebat ? 'ScoreBat' : isDailymotion ? 'Dailymotion' : 'YouTube'}
                 </span>
               </div>
               <button
@@ -101,7 +107,18 @@ export default function HighlightPlayer({ match }: Props) {
             </div>
 
             {/* Player */}
-            {isDailymotion ? (
+            {isScorebat ? (
+              /* ScoreBat embed — own player, không bị chặn ở VN */
+              <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl shadow-black">
+                <iframe
+                  src={data!.embedUrl}
+                  allow="autoplay; fullscreen; picture-in-picture"
+                  allowFullScreen
+                  className="w-full h-full"
+                  title="Highlight"
+                />
+              </div>
+            ) : isDailymotion ? (
               /* Dailymotion embed — không bị chặn ở VN */
               <div className="relative aspect-video rounded-2xl overflow-hidden shadow-2xl shadow-black">
                 <iframe
@@ -134,7 +151,11 @@ export default function HighlightPlayer({ match }: Props) {
               </a>
             )}
 
-            {isDailymotion ? (
+            {isScorebat ? (
+              <p className="text-zinc-600 text-[11px] text-center mt-2">
+                ScoreBat · Phát trực tiếp trong ứng dụng
+              </p>
+            ) : isDailymotion ? (
               <p className="text-zinc-600 text-[11px] text-center mt-2">
                 Dailymotion · Phát trực tiếp trong ứng dụng
               </p>

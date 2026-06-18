@@ -6,10 +6,12 @@ import 'dayjs/locale/vi'
 import type { WCMatch, WCStanding } from '@/lib/wc-types'
 import { teamMatchesQuery } from '@/lib/wc-teams-vi'
 import MatchCard from './MatchCard'
+import { SearchIcon } from '@/components/icons'
 import StandingsTable from './StandingsTable'
 import ScorersTable from './ScorersTable'
 import TeamsGrid from './TeamsGrid'
 import FixtureDetail from './FixtureDetail'
+import HighlightsTab from './HighlightsTab'
 
 dayjs.locale('vi')
 
@@ -35,7 +37,7 @@ const ROUND_ORDER = [
   'Chung kết',
 ]
 
-type SubTab = 'live' | 'matches' | 'standings' | 'scorers' | 'teams'
+type SubTab = 'live' | 'matches' | 'highlights' | 'standings' | 'scorers' | 'teams'
 type GroupView = 'date' | 'group'
 
 export default function WCPage() {
@@ -43,7 +45,11 @@ export default function WCPage() {
   const [subTab, setSubTab] = useState<SubTab>('matches')
   const [selectedRound, setSelectedRound] = useState<string | null>(null)
   const [groupView, setGroupView] = useState<GroupView>('date')
+  const [selectedDate, setSelectedDate] = useState<string | null>(null)
+  const [selectedGroup, setSelectedGroup] = useState<string | null>(null)
+  const [pickerOpen, setPickerOpen] = useState(false)
   const [teamFilter, setTeamFilter] = useState('')
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   const [openFixture, setOpenFixture] = useState<WCMatch | null>(null)
   const todayKey = dayjs().format('ddd, DD/MM/YYYY')
 
@@ -104,35 +110,54 @@ export default function WCPage() {
   const activeMatches = rounds.find(([r]) => r === activeRound)?.[1] ?? []
   const isGroupStage = activeRound === 'Group Stage'
 
-  // Group stage: group by date or by group letter
-  const groupedMatches = useMemo(() => {
-    if (!isGroupStage || hasTeamFilter) return null
-    const sections = new Map<string, WCMatch[]>()
-    if (groupView === 'date') {
-      for (const m of activeMatches) {
-        const key = dayjs(m.date).format('ddd, DD/MM/YYYY')
-        if (!sections.has(key)) sections.set(key, [])
-        sections.get(key)!.push(m)
-      }
-      // Bring today's section to the very top
-      if (sections.has(todayKey)) {
-        const reordered = new Map<string, WCMatch[]>()
-        reordered.set(todayKey, sections.get(todayKey)!)
-        for (const [k, v] of sections) {
-          if (k !== todayKey) reordered.set(k, v)
-        }
-        return reordered
-      }
-    } else {
-      for (const m of activeMatches) {
-        const key = m.group ? `Bảng ${m.group}` : '?'
-        if (!sections.has(key)) sections.set(key, [])
-        sections.get(key)!.push(m)
-      }
-      return new Map([...sections.entries()].sort(([a], [b]) => a.localeCompare(b)))
+  // Group stage sections by date (chronological)
+  const dateSections = useMemo(() => {
+    if (!isGroupStage || hasTeamFilter) return []
+    const map = new Map<string, WCMatch[]>()
+    for (const m of activeMatches) {
+      const key = dayjs(m.date).format('ddd, DD/MM/YYYY')
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(m)
     }
-    return sections
-  }, [isGroupStage, groupView, activeMatches, hasTeamFilter, todayKey])
+    return [...map.entries()]
+      .map(([key, ms]) => ({ key, matches: ms, isToday: key === todayKey, sortDate: ms[0].date }))
+      .sort((a, b) => a.sortDate.localeCompare(b.sortDate))
+  }, [isGroupStage, activeMatches, hasTeamFilter, todayKey])
+
+  // Group stage sections by group letter (skip matches ESPN mislabels as Group Stage but have no group)
+  const groupSections = useMemo(() => {
+    if (!isGroupStage || hasTeamFilter) return []
+    const map = new Map<string, WCMatch[]>()
+    for (const m of activeMatches) {
+      if (!m.group) continue
+      const key = `Bảng ${m.group}`
+      if (!map.has(key)) map.set(key, [])
+      map.get(key)!.push(m)
+    }
+    return [...map.entries()]
+      .map(([key, ms]) => ({ key, matches: ms }))
+      .sort((a, b) => a.key.localeCompare(b.key))
+  }, [isGroupStage, activeMatches, hasTeamFilter])
+
+  // Active section with graceful fallback (default: today for dates, first group)
+  const activeDateSection =
+    dateSections.find((s) => s.key === selectedDate) ??
+    dateSections.find((s) => s.isToday) ??
+    dateSections[0] ??
+    null
+  const activeGroupSection =
+    groupSections.find((s) => s.key === selectedGroup) ?? groupSections[0] ?? null
+
+  // Picker (date vs group) driven by the active groupView
+  const pickerSections: { key: string; matches: WCMatch[]; isToday?: boolean }[] =
+    groupView === 'date' ? dateSections : groupSections
+  const activeSection: { key: string; matches: WCMatch[]; isToday?: boolean } | null =
+    groupView === 'date' ? activeDateSection : activeGroupSection
+  const selectSection = (key: string) => {
+    if (groupView === 'date') setSelectedDate(key)
+    else setSelectedGroup(key)
+    setPickerOpen(false)
+  }
 
   const liveMatches = matches.filter((m) => m.status === 'LIVE')
   const liveCount = liveMatches.length
@@ -182,7 +207,7 @@ export default function WCPage() {
             <button
               key={s}
               type="button"
-              onClick={() => { setSeason(s); setSelectedRound(null); setTeamFilter('') }}
+              onClick={() => { setSeason(s); setSelectedRound(null); setTeamFilter(''); setSelectedDate(null); setSelectedGroup(null); setPickerOpen(false) }}
               className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-all cursor-pointer ${
                 season === s ? 'bg-orange-500 text-white' : 'text-zinc-500 hover:text-zinc-200'
               }`}
@@ -194,49 +219,87 @@ export default function WCPage() {
       </div>
 
       {/* Sub-tabs + team search */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-5">
-        <div className="flex gap-1 bg-white/3 border border-white/6 rounded-xl p-1 w-fit shrink-0">
-          {(['live', 'matches', 'standings', 'scorers', 'teams'] as SubTab[]).map((t) => (
-            <button
-              key={t}
-              type="button"
-              onClick={() => setSubTab(t)}
-              className={`px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                subTab === t ? 'bg-white/10 text-white' : 'text-zinc-500 hover:text-zinc-300'
-              }`}
-            >
-              {t === 'live' && <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />}
-              {t === 'live' ? 'Live' : t === 'matches' ? '📅 Lịch' : t === 'standings' ? '📊 BXH' : t === 'scorers' ? '⚽ Vua Phá Lưới' : '👥 Đội'}
-              {t === 'live' && liveCount > 0 && (
-                <span className="text-[10px] font-black bg-green-500 text-white rounded-full min-w-4 h-4 flex items-center justify-center px-1">
-                  {liveCount}
+      <div className="flex items-center gap-2 mb-5">
+        {/* Tabs — horizontal scroll on mobile */}
+        <div className="flex-1 overflow-x-auto no-scrollbar">
+          <div className="flex gap-1 bg-white/3 border border-white/6 rounded-xl p-1 w-fit">
+            {(['live', 'matches', 'highlights', 'standings', 'scorers', 'teams'] as SubTab[]).map((t) => (
+              <button
+                key={t}
+                type="button"
+                onClick={() => setSubTab(t)}
+                className={`shrink-0 px-2.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                  subTab === t ? 'bg-white/10 text-white' : 'text-zinc-500 hover:text-zinc-300'
+                }`}
+              >
+                {t === 'live' && <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />}
+                {t === 'live' ? 'Live' : t === 'matches' ? '📅 Lịch' : t === 'highlights' ? '🎬' : t === 'standings' ? '📊 BXH' : t === 'scorers' ? '⚽' : '👥'}
+                <span className="hidden sm:inline">
+                  {t === 'highlights' ? 'Highlight' : t === 'scorers' ? 'Vua Phá Lưới' : t === 'teams' ? 'Đội' : ''}
                 </span>
-              )}
-            </button>
-          ))}
+                {t === 'live' && liveCount > 0 && (
+                  <span className="text-[10px] font-black bg-green-500 text-white rounded-full min-w-4 h-4 flex items-center justify-center px-1">
+                    {liveCount}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
 
-        {/* Team search — shown on matches + standings + teams */}
+        {/* Team search — compact icon on mobile, full input on desktop */}
         {(subTab === 'matches' || subTab === 'standings' || subTab === 'teams') && (
-          <div className="relative flex-1 max-w-64">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600 text-sm pointer-events-none">🔍</span>
-            <input
-              type="text"
-              value={teamFilter}
-              onChange={(e) => setTeamFilter(e.target.value)}
-              placeholder="Tìm đội... (VD: Đức, France)"
-              className="w-full bg-white/4 border border-white/8 hover:border-white/15 focus:border-orange-500/50 focus:bg-white/6 rounded-xl pl-9 pr-8 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 outline-none transition-all"
-            />
-            {hasTeamFilter && (
-              <button
-                type="button"
-                onClick={() => setTeamFilter('')}
-                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-300 transition-colors cursor-pointer text-xs"
-              >
-                ✕
-              </button>
-            )}
-          </div>
+          <>
+            {/* Mobile: icon button that expands to input when tapped */}
+            <div className="sm:hidden shrink-0">
+              {mobileSearchOpen ? (
+                <div className="relative">
+                  <input
+                    type="text"
+                    autoFocus
+                    value={teamFilter}
+                    onChange={(e) => setTeamFilter(e.target.value)}
+                    onBlur={() => { if (!teamFilter) setMobileSearchOpen(false) }}
+                    placeholder="Tìm đội..."
+                    className="w-36 bg-white/6 border border-orange-500/40 rounded-xl pl-3 pr-7 py-2 text-xs text-zinc-200 placeholder:text-zinc-500 outline-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => { setTeamFilter(''); setMobileSearchOpen(false) }}
+                    className="absolute right-2 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-zinc-300 cursor-pointer text-xs"
+                  >✕</button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setMobileSearchOpen(true)}
+                  aria-label="Tìm đội"
+                  className={`flex items-center justify-center w-9 h-9 rounded-xl border transition-all cursor-pointer ${hasTeamFilter ? 'bg-orange-500/15 border-orange-500/40 text-orange-400' : 'bg-white/4 border-white/8 text-zinc-500 hover:text-zinc-300 hover:border-white/18'}`}
+                >
+                  <SearchIcon className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+
+            {/* Desktop: full search input */}
+            <div className="hidden sm:block relative shrink-0 w-56">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-600 text-sm pointer-events-none">🔍</span>
+              <input
+                type="text"
+                value={teamFilter}
+                onChange={(e) => setTeamFilter(e.target.value)}
+                placeholder="Tìm đội... (VD: Đức, France)"
+                className="w-full bg-white/4 border border-white/8 hover:border-white/15 focus:border-orange-500/50 focus:bg-white/6 rounded-xl pl-9 pr-8 py-2 text-sm text-zinc-200 placeholder:text-zinc-600 outline-none transition-all"
+              />
+              {hasTeamFilter && (
+                <button
+                  type="button"
+                  onClick={() => setTeamFilter('')}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-zinc-600 hover:text-zinc-300 transition-colors cursor-pointer text-xs"
+                >✕</button>
+              )}
+            </div>
+          </>
         )}
       </div>
 
@@ -304,7 +367,7 @@ export default function WCPage() {
                   <button
                     key={r}
                     type="button"
-                    onClick={() => setSelectedRound(r)}
+                    onClick={() => { setSelectedRound(r); setSelectedDate(null); setSelectedGroup(null); setPickerOpen(false) }}
                     className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-semibold transition-all cursor-pointer ${
                       activeRound === r
                         ? 'bg-orange-500 text-white'
@@ -325,7 +388,7 @@ export default function WCPage() {
                       <button
                         key={r}
                         type="button"
-                        onClick={() => setSelectedRound(r)}
+                        onClick={() => { setSelectedRound(r); setSelectedDate(null); setSelectedGroup(null); setPickerOpen(false) }}
                         className={`text-left px-3 py-2 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
                           activeRound === r
                             ? 'bg-orange-500/15 text-orange-400 border border-orange-500/25'
@@ -346,7 +409,7 @@ export default function WCPage() {
                     <div className="flex items-center gap-1 mb-4 bg-white/3 border border-white/6 rounded-xl p-1 w-fit">
                       <button
                         type="button"
-                        onClick={() => setGroupView('date')}
+                        onClick={() => { setGroupView('date'); setPickerOpen(false) }}
                         className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                           groupView === 'date' ? 'bg-white/12 text-white' : 'text-zinc-500 hover:text-zinc-300'
                         }`}
@@ -355,7 +418,7 @@ export default function WCPage() {
                       </button>
                       <button
                         type="button"
-                        onClick={() => setGroupView('group')}
+                        onClick={() => { setGroupView('group'); setPickerOpen(false) }}
                         className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                           groupView === 'group' ? 'bg-white/12 text-white' : 'text-zinc-500 hover:text-zinc-300'
                         }`}
@@ -365,35 +428,74 @@ export default function WCPage() {
                     </div>
                   )}
 
-                  {/* Grouped sections (Group Stage) */}
-                  {isGroupStage && groupedMatches ? (
-                    <div className="space-y-8">
-                      {[...groupedMatches.entries()].map(([sectionKey, sectionMatches]) => {
-                        const isToday = sectionKey === todayKey
-                        return (
-                        <div key={sectionKey}>
-                          <div className="flex items-center gap-3 mb-3 mt-1">
-                            {isToday ? (
-                              <span className="text-sm font-black text-zinc-900 tracking-tight px-3 py-1 rounded-full bg-gradient-to-r from-orange-500 to-white shadow-lg shadow-orange-500/25">
-                                ● HÔM NAY · {sectionKey}
+                  {/* Group Stage: single section + dropdown picker */}
+                  {isGroupStage ? (
+                    activeSection ? (
+                      <div>
+                        {/* Picker label */}
+                        <div className="relative mb-4 flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setPickerOpen((v) => !v)}
+                            className="cursor-pointer"
+                          >
+                            {activeSection.isToday ? (
+                              <span className="flex items-center gap-1.5 text-sm font-black text-zinc-900 tracking-tight px-3 py-1 rounded-full bg-gradient-to-r from-orange-500 to-white shadow-lg shadow-orange-500/25">
+                                ● HÔM NAY · {activeSection.key}
+                                <span className={`text-sm leading-none transition-transform duration-200 opacity-60 ${pickerOpen ? 'rotate-180' : ''}`}>▾</span>
                               </span>
                             ) : (
-                              <span className="text-sm font-black text-white tracking-tight">{sectionKey}</span>
+                              <span className="flex items-center gap-1.5 text-sm font-black text-white tracking-tight">
+                                {groupView === 'group' ? '🏆 ' : '📅 '}{activeSection.key}
+                                <span className={`text-sm leading-none transition-transform duration-200 text-zinc-400 ${pickerOpen ? 'rotate-180' : ''}`}>▾</span>
+                              </span>
                             )}
-                            <div className="flex-1 h-px bg-white/8" />
-                            <span className="text-[11px] font-bold text-zinc-400 bg-white/6 border border-white/8 px-2 py-0.5 rounded-full">
-                              {sectionMatches.length} trận
-                            </span>
-                          </div>
-                          <div className="space-y-2.5">
-                            {sectionMatches.map((m) => (
-                              <MatchCard key={m.id} match={m} onClick={() => setOpenFixture(m)} />
-                            ))}
-                          </div>
+                          </button>
+                          <span className="text-[11px] font-bold text-zinc-400 bg-white/6 border border-white/8 px-2 py-0.5 rounded-full">
+                            {activeSection.matches.length} trận
+                          </span>
+
+                          {pickerOpen && (
+                            <>
+                              {/* backdrop */}
+                              <div className="fixed inset-0 z-40" onClick={() => setPickerOpen(false)} />
+                              {/* dropdown */}
+                              <div className="absolute top-full left-0 mt-2 z-50 w-64 max-h-80 overflow-y-auto rounded-2xl border border-white/10 bg-zinc-900/98 backdrop-blur shadow-2xl shadow-black p-1.5">
+                                {pickerSections.map((s) => {
+                                  const isActive = s.key === activeSection.key
+                                  return (
+                                    <button
+                                      key={s.key}
+                                      ref={isActive ? (el) => el?.scrollIntoView({ block: 'nearest' }) : undefined}
+                                      type="button"
+                                      onClick={() => selectSection(s.key)}
+                                      className={`w-full flex items-center justify-between gap-2 px-3 py-2 rounded-xl text-left text-sm font-semibold transition-colors cursor-pointer ${
+                                        isActive ? 'bg-orange-500/15 text-orange-400' : 'text-zinc-300 hover:bg-white/6'
+                                      }`}
+                                    >
+                                      <span className="flex items-center gap-1.5 truncate">
+                                        {s.isToday && <span className="w-1.5 h-1.5 rounded-full bg-orange-400 shrink-0" />}
+                                        <span className="truncate">{s.isToday ? `HÔM NAY · ${s.key}` : s.key}</span>
+                                      </span>
+                                      <span className="shrink-0 text-[11px] font-bold text-zinc-500">{s.matches.length}</span>
+                                    </button>
+                                  )
+                                })}
+                              </div>
+                            </>
+                          )}
                         </div>
-                        )
-                      })}
-                    </div>
+
+                        {/* Matches of the active section */}
+                        <div className="space-y-2.5">
+                          {activeSection.matches.map((m) => (
+                            <MatchCard key={m.id} match={m} onClick={() => setOpenFixture(m)} />
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-16 text-zinc-600">Chưa có trận nào</div>
+                    )
                   ) : (
                     /* Knockout rounds: flat list */
                     <div className="space-y-2.5">
@@ -407,6 +509,15 @@ export default function WCPage() {
             </div>
           )}
         </>
+      )}
+
+      {/* Highlights tab */}
+      {subTab === 'highlights' && (
+        matchesLoading ? (
+          <div className="flex justify-center py-20"><div className="spinner" /></div>
+        ) : (
+          <HighlightsTab matches={matches} season={season} />
+        )
       )}
 
       {/* Standings tab */}

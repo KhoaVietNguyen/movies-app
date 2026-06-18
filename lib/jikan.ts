@@ -42,6 +42,52 @@ export async function getAnime(tab: AnimeTab, page: number): Promise<MoviePage> 
   }
 }
 
+export async function getAnimeByYear(year: number, page: number): Promise<MoviePage> {
+  const start = `${year}-01-01`
+  const end = `${year}-12-31`
+  const data = await jikanFetch(
+    `/anime?start_date=${start}&end_date=${end}&order_by=score&sort=desc&page=${page}&sfw=true&limit=24`,
+  )
+  return {
+    page: data.pagination?.current_page ?? page,
+    results: (data.data ?? []).map(toAnime),
+    totalPages: data.pagination?.last_page ?? 1,
+  }
+}
+
+export async function getAnimeByFilter(
+  opts: { genreId: number | null; year: number | null },
+  page: number,
+): Promise<MoviePage> {
+  const params = new URLSearchParams({ order_by: 'score', sort: 'desc', sfw: 'true', limit: '24', page: String(page) })
+  if (opts.genreId) params.set('genres', String(opts.genreId))
+  if (opts.year) { params.set('start_date', `${opts.year}-01-01`); params.set('end_date', `${opts.year}-12-31`) }
+  const data = await jikanFetch(`/anime?${params}`)
+  return {
+    page: data.pagination?.current_page ?? page,
+    results: (data.data ?? []).map(toAnime),
+    totalPages: data.pagination?.last_page ?? 1,
+  }
+}
+
+// MAL genre list (main genres, SFW only)
+export const ANIME_GENRES = [
+  { id: 1,  name: 'Action' },
+  { id: 2,  name: 'Adventure' },
+  { id: 4,  name: 'Comedy' },
+  { id: 8,  name: 'Drama' },
+  { id: 10, name: 'Fantasy' },
+  { id: 14, name: 'Horror' },
+  { id: 7,  name: 'Mystery' },
+  { id: 22, name: 'Romance' },
+  { id: 24, name: 'Sci-Fi' },
+  { id: 36, name: 'Slice of Life' },
+  { id: 30, name: 'Sports' },
+  { id: 37, name: 'Supernatural' },
+  { id: 41, name: 'Suspense' },
+  { id: 46, name: 'Award Winning' },
+]
+
 export async function searchAnime(q: string, page = 1): Promise<MoviePage> {
   const data = await jikanFetch(`/anime?q=${encodeURIComponent(q)}&page=${page}&limit=10&sfw=true`)
   return {

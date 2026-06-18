@@ -1,11 +1,10 @@
 'use client'
 import { useQuery } from '@tanstack/react-query'
 import { getGenres } from '@/lib/tmdb'
-import GenrePicker from './GenrePicker'
-import YearPicker from './YearPicker'
-import CountryPicker from './CountryPicker'
+import FilterBar from './FilterBar'
 import { SearchIcon } from './icons'
 import type { AppMode } from '@/lib/types'
+import { ANIME_GENRES } from '@/lib/jikan'
 
 const MODES: { key: AppMode; icon: string; label: string }[] = [
   { key: 'movie', icon: '🎬', label: 'Phim' },
@@ -60,32 +59,18 @@ export default function Header({
           </div>
         </div>
 
-        {/* Mode switcher — luôn visible, nằm trong header */}
-        <div className="flex gap-0.5 rounded-xl p-1 bg-white/5 border border-white/8 shrink-0">
-          {MODES.map(({ key, icon, label }) => (
-            <button
-              key={key}
-              type="button"
-              onClick={() => onModeChange(key)}
-              className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-lg text-[12px] sm:text-[13px] font-semibold transition-all cursor-pointer ${
-                mode === key
-                  ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30'
-                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/6'
-              }`}
-            >
-              <span className="leading-none text-sm">{icon}</span>
-              <span className="hidden sm:inline">{label}</span>
-            </button>
-          ))}
-        </div>
-
-        {/* Filters — movie mode only */}
-        {!isAnime && !isWatchlist && !isWC && (
-          <>
-            <GenrePicker genres={genres} selectedGenre={selectedGenre} onGenreChange={onGenreChange} />
-            <YearPicker selectedYear={selectedYear} onYearChange={onYearChange} />
-            <CountryPicker selectedCountry={selectedCountry} onCountryChange={onCountryChange} />
-          </>
+        {/* Filters */}
+        {!isWatchlist && !isWC && (
+          <FilterBar
+            genres={isAnime ? ANIME_GENRES : genres}
+            selectedGenre={selectedGenre}
+            selectedYear={selectedYear}
+            selectedCountry={selectedCountry}
+            onGenreChange={onGenreChange}
+            onYearChange={onYearChange}
+            onCountryChange={onCountryChange}
+            isAnime={isAnime}
+          />
         )}
 
         <div className="flex-1" />
@@ -106,6 +91,25 @@ export default function Header({
             </kbd>
           </button>
         )}
+
+        {/* Mode switcher — góc phải */}
+        <div className="flex gap-0.5 rounded-xl p-1 bg-white/5 border border-white/8 shrink-0">
+          {MODES.map(({ key, icon, label }) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => onModeChange(key)}
+              className={`flex items-center gap-1 sm:gap-1.5 px-2 sm:px-2.5 py-1.5 rounded-lg text-[12px] sm:text-[13px] font-semibold transition-all cursor-pointer ${
+                mode === key
+                  ? 'bg-orange-500 text-white shadow-md shadow-orange-500/30'
+                  : 'text-zinc-400 hover:text-zinc-200 hover:bg-white/6'
+              }`}
+            >
+              <span className="leading-none text-sm">{icon}</span>
+              <span className="hidden sm:inline">{label}</span>
+            </button>
+          ))}
+        </div>
       </div>
     </header>
   )

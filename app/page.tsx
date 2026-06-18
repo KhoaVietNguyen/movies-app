@@ -3,7 +3,7 @@ import { useInfiniteQuery } from '@tanstack/react-query'
 import { useState, useEffect, useRef, useCallback, Suspense } from 'react'
 import { useSearchParams, useRouter } from 'next/navigation'
 import { getMovies, discoverMovies } from '@/lib/tmdb'
-import { getAnime } from '@/lib/jikan'
+import { getAnime, getAnimeByFilter } from '@/lib/jikan'
 import type { MovieTab, AnimeTab, AppMode } from '@/lib/types'
 import { useWatchlist } from '@/lib/context/WatchlistContext'
 import Header from '@/components/Header'
@@ -43,22 +43,27 @@ function HomeContent() {
   const isWCMode = mode === 'wc'
   const isWatchlist = tab === 'watchlist'
   const isAnime = tab.startsWith('anime_')
+  const useAnimeFilter = isAnime && (selectedYear !== null || selectedGenre !== null)
   const useDiscover = !isAnime && !isWatchlist && !isWCMode && (selectedGenre !== null || selectedYear !== null || selectedCountry !== null)
 
-  const queryKey = isAnime
-    ? ['anime', tab]
-    : useDiscover
-      ? ['discover', selectedGenre, selectedYear, selectedCountry]
-      : ['movies', tab]
+  const queryKey = useAnimeFilter
+    ? ['anime', 'filter', selectedGenre, selectedYear]
+    : isAnime
+      ? ['anime', tab]
+      : useDiscover
+        ? ['discover', selectedGenre, selectedYear, selectedCountry]
+        : ['movies', tab]
 
   const { data, fetchNextPage, hasNextPage, isFetching, isFetchingNextPage } = useInfiniteQuery({
     queryKey,
     queryFn: ({ pageParam }) =>
-      isAnime
-        ? getAnime(tab as AnimeTab, pageParam)
-        : useDiscover
-          ? discoverMovies({ genreId: selectedGenre, year: selectedYear, country: selectedCountry }, pageParam)
-          : getMovies(tab, pageParam),
+      useAnimeFilter
+        ? getAnimeByFilter({ genreId: selectedGenre, year: selectedYear }, pageParam)
+        : isAnime
+          ? getAnime(tab as AnimeTab, pageParam)
+          : useDiscover
+            ? discoverMovies({ genreId: selectedGenre, year: selectedYear, country: selectedCountry }, pageParam)
+            : getMovies(tab, pageParam),
     initialPageParam: 1,
     getNextPageParam: (last) => (last.page < last.totalPages ? last.page + 1 : undefined),
     enabled: !isWatchlist && !isWCMode,

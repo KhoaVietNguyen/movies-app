@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { fetchWorldCupHighlights, findHighlight } from '@/lib/wc-highlights'
 
 const SPORTSDB = 'https://www.thesportsdb.com/api/v1/json/3'
 
@@ -20,6 +21,21 @@ export async function GET(req: Request) {
   const afId = searchParams.get('afId') ?? ''
 
   if (!home || !away) return NextResponse.json(null)
+
+  // ── 0. ScoreBat feed (own player, VN-accessible, good quality) ──
+  try {
+    const items = await fetchWorldCupHighlights()
+    const hit = findHighlight(items, home, away)
+    if (hit?.embedUrl) {
+      return NextResponse.json({
+        videoId: '',
+        embedUrl: hit.embedUrl,
+        title: hit.title,
+        thumbnail: hit.thumbnail,
+        source: 'scorebat',
+      })
+    }
+  } catch { /* continue */ }
 
   // ── 1. Dailymotion search (VN-accessible, fan uploads not geo-blocked) ──
   try {

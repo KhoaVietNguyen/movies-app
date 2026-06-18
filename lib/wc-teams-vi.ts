@@ -120,6 +120,10 @@ export const VI_NAMES: Record<string, string[]> = {
 }
 
 // Normalize string for fuzzy matching (lowercase + remove diacritics)
+export function normalizeTeam(s: string): string {
+  return normalize(s)
+}
+
 function normalize(s: string): string {
   return s
     .toLowerCase()
